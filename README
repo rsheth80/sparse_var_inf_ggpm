@@ -1,0 +1,144 @@
+This Matlab code implements the generalized sparse framework for GP models 
+described in the paper, "Sparse Variational Inference for Generalized Gaussian 
+Process Models".
+
+Rishit Sheth, 3/12/15
+
+*** Required packages ***
+
+    GPML toolbox    http://www.gaussianprocess.org/gpml/code/matlab/doc/
+    minFunc         http://www.cs.ubc.ca/~schmidtm/Software/minFunc.html
+
+Tested with GPML toolbox v3.4 and minFunc_2012. 
+
+The GPML toolbox-compatible likelihood function likCumlog is included for use 
+with ordinal regression.
+
+*** Overview ***
+
+The function gen_gp_train performs training of a sparse generalized GP model via
+coordinate ascent using minFunc except in the case where the fixed point 
+procedure is specified. The inputs to gen_gp_train are the (model,data,params) 
+triplet (described below) and an L x 2 cell array, meth, describing the L 
+optimizations to be performed in one coordinate ascent loop.
+
+The first column of meth specifies the objective function to be optimized with a
+function handle (note, minFunc performs minimization of the objective function).
+The second column specifies the options to provide to minFunc as a structure 
+(see minFunc documentation for more information). In this way, each row of meth 
+implicitly defines the optimization variables.
+
+Where minFunc is expected to perform the optimization, the optimization 
+variables should all be located within the params structure and the objective 
+functions must be declared to take to accept three different sets of inputs as 
+arguments and return the following outputs:
+
+    input set 1:    initial vector, model, data, params
+    output:         objective function value, 1st deriv. of objective function 
+                    wrt/ input variables represented by the initial vector, and,
+                    optionally, the Hessian of the objective function
+
+    input set 2:    params
+    output:         vector extracted from params
+
+    input set 3:    vector, model, data, params, 1 (dummy argument)
+    output:         params with vector placed appropriately within structure
+
+The included objective functions and corresponding optimization variables are:
+
+    f_obj_primal_m      variational mean under GGPM
+    f_obj_primal_C      Cholesky factor of variational covariance under GGPM
+    f_obj_primal_mC     variational mean and Cholesky factor of variational 
+                        covariance under GGPM
+    f_obj_primal_V      variational covariance under GGPM
+    f_obj_laplace       mean and covariance under Laplace approximation
+    f_obj_primal_h      GP mean and covariance parameters and likelihood 
+                        function parameters under GGPM
+    f_obj_laplace_h     GP mean and covariance parameters and likelihood 
+                        function parameters under Laplace approximation
+
+The fixed point optimization of the variational covariance is handled in its own
+function, fp_opt, which takes the (model,data,params) triplet and, optionally, a
+minFunc options structure as arguments.
+
+gen_gp_train returns a structure describing the trained model with fields 
+equivalent to the params structure of the (model,data,params) triplet.
+
+The function gen_gp_predict takes the triplet (model,data,params) as arguments 
+along with the Npred input locations to be predicted at and returns a structure 
+containing the latent GP mean and variance and output mean and variance 
+evaluated at the input locations:
+
+predictions:
+    x:              [Npred x D]             D-dim. input locations to predict at
+                                            (Npred total locations)
+    lp:             [Npred x 1]             predictive log probabilities at x
+    f_mean:         [Npred x 1]             posterior GP mean evaluated at x
+    f_var:          [Npred x 1]             posterior GP variance evaluated at x
+    y_mean:         [Npred x 1]             output mean evaluated at x
+    y_var:          [Npred x 1]             output variance evaluated at x
+
+
+The triplet of Matlab structures (model,data,params) is used throughout the 
+code. These structures are:
+
+model:
+    type:           [string]                %s_%s where the first string 
+                                            specifies the data type ('sparse' or
+                                            'sod') and the second string 
+                                            specifies the likelihood model. 
+                                            currently implemented models:
+                                                gpc:    binary classification
+                                                        w/ Bernoulli-logit
+                                                gppr:   count regression 
+                                                        w/ Poisson
+                                                gpo:    ordinal regression
+                                                        w/ cumulative logit
+    mean_func:      [cell of fhandles]      see GPML toolbox documentation
+    cov_func:       [cell of fhandles]      see GPML toolbox documentation
+    lik_func:       [cell of fhandles]      see GPML toolbox documentation
+
+data:
+    xt:             [Ntrain x D]            D-dim. input locations 
+                                            (Ntrain total locations)
+    yt:             [Ntrain x 1]            Ntrain outputs
+
+params:
+    hyp:            [structure of doubles]  see GPML toolbox documentation
+    var:            [structure]
+        xpseudo     [Ninducing x D]         D-dim. inducing locations 
+                                            (Ninducing total)
+        m           [Ninducing x 1]         variational mean
+        C           [Ninducing x Ninducing] Cholesky factor of variational 
+
+*** Generalizing ***
+
+To include a new likelihood function into the package requires adding the 
+appropriate procedures to calculate the expectations of the 0th, 1st, and 2nd 
+order derivatives of the log-likelihood to the calc_expf function.
+
+The sparse vs. sod model types are handled by the implementation and do not 
+require any extra coding effort on the part of the user.
+
+*** Demo ***
+
+A demo of the code is provided. To run, the GPML toolbox and minFunc packages 
+need to be on the Matlab path. If these packages are located as siblings of the
+parent directory of this code, then startup.m can be run.
+
+The demo performs either sparse variational inference or variational Gaussian
+inference on a SoD. The fraction of data points to use as the inducing set or 
+subset is an argument. Example usages:
+
+sparse_var_inf_ggpm_demo('sod',0.1);    % var gauss inf on 1/10 of train data
+sparse_var_inf_ggpm_demo('sparse',0.1); % sparse var inf on 1/10 of train data
+sparse_var_inf_ggpm_demo('sod',1.0);    % var gauss inf on full train data
+
+The optimization parameters for the coordinate ascent variables can be modified 
+to further explore performance (e.g., hyperparameter optimization with CG 
+instead of quasi-Newton).
+
+*** References ***
+
+Sheth, R., Wang, Y., Khardon R. (2015). Sparse variational inference for 
+generalized Gaussian process models. Appearing in ICML.

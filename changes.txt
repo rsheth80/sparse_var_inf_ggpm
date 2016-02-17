@@ -1,0 +1,10 @@
+5/25/15
+
++ faster version of random_sample.m
++ added SGD count experiment and data set
++ corrected calls to minFunc_rs in gen_gp_train and full_var_opt_dm_fpV (now
+call minFunc)
+
+3/12/15
+
++ initial version
