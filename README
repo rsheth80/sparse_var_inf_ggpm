@@ -2,7 +2,7 @@ This Matlab code implements the generalized sparse framework for GP models
 described in the paper, "Sparse Variational Inference for Generalized Gaussian 
 Process Models".
 
-Rishit Sheth, 3/12/15
+Rishit Sheth, 2/17/16
 
 *** Required packages ***
 
@@ -140,5 +140,5 @@ instead of quasi-Newton).
 
 *** References ***
 
-Sheth, R., Wang, Y., Khardon R. (2015). Sparse variational inference for 
-generalized Gaussian process models. Appearing in ICML.
+Sheth, R., Wang, Y., Khardon R., Sparse variational inference for generalized 
+Gaussian process models, ICML 2015.

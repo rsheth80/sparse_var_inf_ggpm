@@ -15,15 +15,37 @@ function [varargout] = likCumLog(K, hyp, y, mu, s2, inf, i)
 % phi_{K-1} = phi_{K-2} + exp(log(\delta_{K-1}))
 %
 % can call as feval({@likCumLog,K},...)
+%
+% rs    02/10/16    using better approximation for log(pr) when pr is very small
+%
+% Copyright (C) 2016  Rishit Sheth
+
+% This program is free software: you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation, either version 3 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License
+% along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 
 if(nargin<4) % return no. of hyps
     varargout = {num2str(K)};
     return;
 end;
 
+smallest_arg = -15;
+
 % constrain 
 y(y<1) = 1;
 y(y>K) = K;
+
+% transform hyps 
 phi = cumsum([hyp(1);exp(hyp(2:end-1));]);
 phi = [-Inf;phi;Inf];
 slope = exp(hyp(end));
@@ -64,9 +86,21 @@ else % inference
             % the following line is used to calculate the gauss quad points
             % which are supplied in the mu vector by lik_epquad (as well as 
             % whatever else it is used for)
-            pr = sigmoid(slope*(phi(y+1)-mu)) - sigmoid(slope*(phi(y)-mu));
-            pr(pr<realmin) = realmin;
-            lp = log(pr);
+%            pr = sigmoid(arg_z) - sigmoid(arg_x);
+%            pr(pr<realmin) = realmin;
+%            lp = log(pr);
+            arg_z = slope*(phi(y+1)-mu);
+            arg_x = slope*(phi(y)-mu);
+            ix_z = find(arg_z > smallest_arg);
+            ix_x = find(arg_x > smallest_arg);
+            lp_term_z = arg_z;
+            lp_term_z(ix_z) = log(sigmoid(arg_z(ix_z)));
+            lp_term_x = arg_x;
+            lp_term_x(ix_x) = log(sigmoid(arg_x(ix_x)));
+            lx = (y~=1);
+            lp(~lx) = lp_term_z(~lx);
+            lp(lx) = lp_term_z(lx) + lp_term_x(lx) - arg_x(lx) ...
+                        + log(1 - exp(arg_x(lx) - arg_z(lx)));
             if(nargout>1) % need d(log p)/df
                 sy = sigmoid(slope*(mu-phi(y+1)));
                 sy1 = sigmoid(slope*(mu-phi(y)));
@@ -181,3 +215,4 @@ end;
 function y = sigmoid(x)
 
 y = 1./(1+exp(-x));
+

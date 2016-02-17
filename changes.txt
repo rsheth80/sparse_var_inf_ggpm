@@ -1,3 +1,7 @@
+2/17/16
+
++ replaced likCumLog with a version that uses a better approximation for log(pr) when pr is very small
+
 5/25/15
 
 + faster version of random_sample.m
