@@ -17,22 +17,7 @@ function [varargout] = likCumLog(K, hyp, y, mu, s2, inf, i)
 % can call as feval({@likCumLog,K},...)
 %
 % rs    02/10/16    using better approximation for log(pr) when pr is very small
-%
-% Copyright (C) 2016  Rishit Sheth
-
-% This program is free software: you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation, either version 3 of the License, or
-% (at your option) any later version.
-%
-% This program is distributed in the hope that it will be useful,
-% but WITHOUT ANY WARRANTY; without even the implied warranty of
-% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-% GNU General Public License for more details.
-%
-% You should have received a copy of the GNU General Public License
-% along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
+% rs    02/21/16    adjusted dimensions of output lp
 
 if(nargin<4) % return no. of hyps
     varargout = {num2str(K)};
@@ -55,9 +40,19 @@ if(nargin<6) % prediction
         y = zeros(size(mu));
     end;
     if(isempty(s2)||all(s2==0)) % evaluate log prob at input y with f = mu
-        pr = sigmoid(slope*(phi(y+1)-mu)) - sigmoid(slope*(phi(y)-mu));
-        pr(pr<realmin) = realmin;
-        lp = log(pr);
+	arg_z = slope*(phi(y+1)-mu);
+	arg_x = slope*(phi(y)-mu);
+	ix_z = find(arg_z > smallest_arg);
+	ix_x = find(arg_x > smallest_arg);
+	lp_term_z = arg_z;
+	lp_term_z(ix_z) = log(sigmoid(arg_z(ix_z)));
+	lp_term_x = arg_x;
+	lp_term_x(ix_x) = log(sigmoid(arg_x(ix_x)));
+	lx = (y~=1);
+        lp = zeros(size(y));
+	lp(~lx) = lp_term_z(~lx);
+	lp(lx) = lp_term_z(lx) + lp_term_x(lx) - arg_x(lx) ...
+				+ log(1 - exp(arg_x(lx) - arg_z(lx)));
     else % evaluate pred log prob at input y
         lp = likCumLog(K, hyp, y, mu, s2, 'infEP'); % use gauss quad
     end;
@@ -83,12 +78,9 @@ else % inference
     case 'infLaplace'
         if(nargin<7) % do not need derivs wrt/ hyps
             dlp = {}; d2lp = {}; d3lp = {};
-            % the following line is used to calculate the gauss quad points
+            % the following is used to calculate the gauss quad points
             % which are supplied in the mu vector by lik_epquad (as well as 
             % whatever else it is used for)
-%            pr = sigmoid(arg_z) - sigmoid(arg_x);
-%            pr(pr<realmin) = realmin;
-%            lp = log(pr);
             arg_z = slope*(phi(y+1)-mu);
             arg_x = slope*(phi(y)-mu);
             ix_z = find(arg_z > smallest_arg);
@@ -98,6 +90,7 @@ else % inference
             lp_term_x = arg_x;
             lp_term_x(ix_x) = log(sigmoid(arg_x(ix_x)));
             lx = (y~=1);
+            lp = zeros(size(y));
             lp(~lx) = lp_term_z(~lx);
             lp(lx) = lp_term_z(lx) + lp_term_x(lx) - arg_x(lx) ...
                         + log(1 - exp(arg_x(lx) - arg_z(lx)));
@@ -145,18 +138,22 @@ else % inference
                 lxe = y==i;
                 lxg = y>i;
                 lp_dhyp(lxz) = 0;
-                lp_dhyp(lxe) = 1./(exp(slope*(phi(y(lxe)+1)-phi(y(lxe))))-1) + sy(lxe);
+                lp_dhyp(lxe) = 1./(exp(slope*(phi(y(lxe)+1)-phi(y(lxe))))-1) ...
+                                + sy(lxe);
                 lp_dhyp(lxg) = -1 + sy(lxg) + sy1(lxg);
                 lp_dhyp = lp_dhyp * (slope^1)*exp(hyp(i));
                 if(nargout>1)
                     dlp_dhyp(lxz) = 0;
                     dlp_dhyp(lxe) = (1-sy(lxe)).*sy(lxe);
-                    dlp_dhyp(lxg) = (1-sy(lxg)).*sy(lxg) + (1-sy1(lxg)).*sy1(lxg);
+                    dlp_dhyp(lxg) = (1-sy(lxg)).*sy(lxg) ...
+                                        + (1-sy1(lxg)).*sy1(lxg);
                     dlp_dhyp = dlp_dhyp * (slope^2)*exp(hyp(i));
                     if(nargout>2)
                         d2lp_dhyp(lxz) = 0;
-                        d2lp_dhyp(lxe) = (1-sy(lxe)).*sy(lxe).*(2*(1-sy(lxe))-1);
-                        d2lp_dhyp(lxg) = (1-sy(lxg)).*sy(lxg).*(2*(1-sy(lxg))-1) ...
+                        d2lp_dhyp(lxe) = ...
+                            (1-sy(lxe)).*sy(lxe).*(2*(1-sy(lxe))-1);
+                        d2lp_dhyp(lxg) = ...
+                            (1-sy(lxg)).*sy(lxg).*(2*(1-sy(lxg))-1) ...
                              + (1-sy1(lxg)).*sy1(lxg).*(2*(1-sy1(lxg))-1);
                         d2lp_dhyp = d2lp_dhyp * (slope^3)*exp(hyp(i));
                     else
@@ -187,13 +184,17 @@ else % inference
                     dlp_dhyp = dlp_dhyp*slope;
                     if(nargout>2)
                         d2lp_dhyp(lx1) = -2*slope*(1-sy(lx1)).*sy(lx1) ...
-                            - (slope^2)*sy(lx1).*(1-sy(lx1)).*(1-2*sy(lx1)).*asy(lx1);
+                            - (slope^2)*sy(lx1).*(1-sy(lx1)).*(1-2*sy(lx1)) ...
+                                                                .*asy(lx1);
                         d2lp_dhyp(lxo) = -2*slope*((1-sy(lxo)).*sy(lxo) ...
                             + (1-sy1(lxo)).*sy1(lxo)) ...
-                            - (slope^2)*((1-sy(lxo)).*sy(lxo).*(1-2*sy(lxo)).*asy(lxo) ...
-                            + sy1(lxo).*(1-sy1(lxo)).*(1-2*sy1(lxo)).*asy1(lxo));
+                            - (slope^2)*((1-sy(lxo)).*sy(lxo).*(1-2*sy(lxo)) ...
+                                                                .*asy(lxo) ...
+                            + sy1(lxo).*(1-sy1(lxo)).*(1-2*sy1(lxo)) ...
+                                                                .*asy1(lxo));
                         d2lp_dhyp(lxk) = -2*slope*(1-sy1(lxk)).*sy1(lxk) ...
-                            - (slope^2)*sy1(lxk).*(1-sy1(lxk)).*(1-2*sy1(lxk)).*asy1(lxk);
+                            - (slope^2)*sy1(lxk).*(1-sy1(lxk)) ...
+                                                    .*(1-2*sy1(lxk)).*asy1(lxk);
                         d2lp_dhyp = slope*d2lp_dhyp;
                     else
                         d2lp_dhyp = {};

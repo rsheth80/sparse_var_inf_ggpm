@@ -1,14 +1,34 @@
+2/21/16
+
++   added an example containing the model, data, and params structures set up in
+    the case of sparse GP ordinal regression (with the stocks dataset); in this 
+    example, the hyperparameters have been tuned from a previous optimization;
++   modified gen_gp_predict to include field lp in output struct only if test 
+    outputs provided as fifth argument (adjusted code in 
+    sparse_var_inf_ggpm_demo to account for this); the log prob calculated with 
+    gen_gp_predict on the test set data was only valid in the case of logistic 
+    likelihood (it was only calculating the log prob of y = 0); was also wrong 
+    in the case of gpo, but for a different reason; 
++   re-wrote the gpo hyperparameter initialization code so that an additional 
+    helper function is not required (attempting to run init_hyp for the ordinal 
+    likelihood was previously returning an error)
++   modified dimensions of output lp in likCumLog
++   moved likCumLog.m and sigmoid.m to util directory
++   added comments to fp_opt.m describing the returned matrix in params.var.C
++   added parameter check to sparse_var_inf_ggpm_demo
+
 2/17/16
 
-+ replaced likCumLog with a version that uses a better approximation for log(pr) when pr is very small
++   replaced likCumLog with a version that uses a better approximation for 
+    log(pr) when pr is very small
 
 5/25/15
 
-+ faster version of random_sample.m
-+ added SGD count experiment and data set
-+ corrected calls to minFunc_rs in gen_gp_train and full_var_opt_dm_fpV (now
-call minFunc)
++   faster version of random_sample.m (uses Matlab's randperm)
++   added SGD count experiment and data set
++   corrected calls to minFunc_rs in gen_gp_train and full_var_opt_dm_fpV (now
+    call minFunc)
 
 3/12/15
 
-+ initial version
++   initial version

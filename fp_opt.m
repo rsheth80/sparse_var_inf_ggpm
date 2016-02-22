@@ -1,6 +1,22 @@
 function [params,output,fp_vlb_new] = fp_opt(model,data,params,opts)
 % function [params,output,f] = fp_opt(model,data,params,opts)
 %
+% Performs fixed point updates on the matrix stored in params.var.V
+%
+% Note: The matrix returned in params.var.C is not the Cholesky decomposition of
+% params.var.V in the sense that params.var.C is lower triangular and 
+% params.var.V = params.var.C' * params.var.C (whereas params.var.C would be the
+% Cholesky decomposition if params.var.V = params.var.C' * params.var.C and
+% params.var.C was upper right, or params.var.V = params.var.C * params.var.C' 
+% and params.var.C was lower left). This is OK since most of the code only 
+% assumes params.var.C' * params.var.C = params.var.V, not that params.var.C is
+% the Cholesky decomposition. The only place where the Cholesky decomposition 
+% is assumed is in functions related to optimization in the Cholesky 
+% decomposition (dvlb_dC.m, f_obj_primal_C.m, f_obj_primal_mC.m). Therefore, 
+% either fp_opt.m and these functions should not be run together, or 
+% params.var.C should be corrected to hold the actual Cholesky decomposition
+% before these functions are run.
+%
 % Copyright (C) 2016  Rishit Sheth
 
 % This program is free software: you can redistribute it and/or modify
@@ -96,6 +112,7 @@ while( num_fp_iters < max_fp_iters && ...
     % fp iterations exit checking
     p.var.V = V;
     p.var.C = iciV';
+
     [fp_vlb_new,calcs] = calc_vlb(model,data,p);
     tolOpt = max(max(abs(dvlb_dV(model,data,p,calcs))));
     tolProg = abs(fp_vlb_new-fp_vlb);

@@ -1,6 +1,11 @@
 function hyp = init_hyps(model,x,y)
 % function hyp = init_hyps(model,x,y)
 %
+% Performs very limited and hopefully reasonable hyperparameter initialization.
+%
+% rs    022116  re-wrote gpo hyp initialization so that an additional helper 
+%               function is not required
+%
 % Copyright (C) 2016  Rishit Sheth
 
 % This program is free software: you can redistribute it and/or modify
@@ -32,8 +37,8 @@ case 'gpo' % assume covSEiso, meanZero, likCumLog
     delta = 2;
     slope = 50;
     hyp.lik = [-1;log(ones(n-2,1)*delta/(n-2));log(slope)];
-    ptemp.hyp = hyp;
-    phi = ord_disp_hyp(ptemp);
+    phi = cumsum([hyp.lik(1);exp(hyp.lik(2:end-1));]);
+    phi = [-Inf;phi;Inf];
     hyp.cov(2) = log(std(phi(2:end-1)));
 otherwise
     hyp = init_default;

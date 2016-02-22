@@ -25,6 +25,9 @@ function demo(mdt, frac)
 % You should have received a copy of the GNU General Public License
 % along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+if(nargin<2)
+    error('Two arguments required.');
+end;
 
 rng(0);                             % set seed for RNG
 figure;
@@ -83,7 +86,7 @@ opts_gen.MaxIter = 100;             % these are the default values in
 opts_gen.optTol = 1e-5;             % gen_gp_train, but can modify here to see
 opts_gen.progTol = 1e-9;            % the effects of different stopping criteria
 params_out = gen_gp_train(model,data,params,meth,opts_gen);
-preds = gen_gp_predict(model,data,params_out,t);
+preds = gen_gp_predict(model,data,params_out,t,1);
 lp = preds.lp;
 % ---------------------------------------------------------
 % ---- sparse var inf for ggpm training and prediction ----
