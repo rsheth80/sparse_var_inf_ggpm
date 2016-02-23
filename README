@@ -31,7 +31,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     GPML toolbox    http://www.gaussianprocess.org/gpml/code/matlab/doc/
     minFunc         http://www.cs.ubc.ca/~schmidtm/Software/minFunc.html
 
-Tested with GPML toolbox v3.4 and minFunc_2012. 
+Tested with GPML toolbox v3.4 and minFunc_2012 on Matlab 2012a/b.
 
 The GPML toolbox-compatible likelihood function likCumlog is included for use 
 with ordinal regression.
