@@ -2,9 +2,31 @@ This Matlab code implements the generalized sparse framework for GP models
 described in the paper, "Sparse Variational Inference for Generalized Gaussian 
 Process Models".
 
-Rishit Sheth, 2/17/16
+README Contents:
 
-*** Required packages ***
+1. Required Packages
+2. Overview
+3. Generalizing
+4. Demo
+5. References
+6. Included Files
+
+Copyright (C) 2016  Rishit Sheth, 2/17/16
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+*** 1. Required Packages ***
 
     GPML toolbox    http://www.gaussianprocess.org/gpml/code/matlab/doc/
     minFunc         http://www.cs.ubc.ca/~schmidtm/Software/minFunc.html
@@ -14,7 +36,7 @@ Tested with GPML toolbox v3.4 and minFunc_2012.
 The GPML toolbox-compatible likelihood function likCumlog is included for use 
 with ordinal regression.
 
-*** Overview ***
+*** 2. Overview ***
 
 The function gen_gp_train performs training of a sparse generalized GP model via
 coordinate ascent using minFunc except in the case where the fixed point 
@@ -111,7 +133,7 @@ params:
         m           [Ninducing x 1]         variational mean
         C           [Ninducing x Ninducing] Cholesky factor of variational 
 
-*** Generalizing ***
+*** 3. Generalizing ***
 
 To include a new likelihood function into the package requires adding the 
 appropriate procedures to calculate the expectations of the 0th, 1st, and 2nd 
@@ -120,7 +142,7 @@ order derivatives of the log-likelihood to the calc_expf function.
 The sparse vs. sod model types are handled by the implementation and do not 
 require any extra coding effort on the part of the user.
 
-*** Demo ***
+*** 4. Demo ***
 
 A demo of the code is provided. To run, the GPML toolbox and minFunc packages 
 need to be on the Matlab path. If these packages are located as siblings of the
@@ -138,7 +160,47 @@ The optimization parameters for the coordinate ascent variables can be modified
 to further explore performance (e.g., hyperparameter optimization with CG 
 instead of quasi-Newton).
 
-*** References ***
+*** 5. References ***
 
 Sheth, R., Wang, Y., Khardon R., Sparse variational inference for generalized 
 Gaussian process models, ICML 2015.
+
+*** 6. Included Files ***
+
+LICENSE
+README
+calc_expf.m
+calc_post_params.m
+calc_vlb.m
+changes.txt
+compute_model.m
+data_all.mat
+doc/main_icml_final_051615.pdf
+doc/main_icml_submitted_020615.pdf
+doc/supplement.pdf
+dvlb_dC.m
+dvlb_dV.m
+dvlb_dh.m
+dvlb_dm.m
+example_ordinal_stocks.mat
+f_obj_laplace.m
+f_obj_laplace_h.m
+f_obj_primal_C.m
+f_obj_primal_V.m
+f_obj_primal_h.m
+f_obj_primal_m.m
+f_obj_primal_mC.m
+fp_opt.m
+full_var_opt_dm_fpV.m
+gen_gp_predict.m
+gen_gp_train.m
+sgd_count_exp.m
+sparse_var_inf_ggpm_demo.m
+startup.m
+util/define_init_model.m
+util/define_model_likelihood.m
+util/init_hyps.m
+util/likCumLog.m
+util/random_sample.m
+util/sigmoid.m
+
